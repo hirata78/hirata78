@@ -1,4 +1,4 @@
-### Hi there 👋
+### Hi there
 
 Here is a little of how I became a future Data Analyst, living in Japan, 44 years old Brazilian, husband, and father of three, who loves communication, marketing, math, technology, physics, philosophy…
 
