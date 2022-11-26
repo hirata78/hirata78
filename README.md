@@ -1,4 +1,4 @@
-After graduating in Public Relations, I acquired experience in managing communication systems, opinion surveys, and working with marketing departments.
+As a Communication and Public Relations bachelor, I acquired experience in planning and managing communication systems, opinion surveys, and working with marketing departments.
 
 In Japan, I worked in manufacturing and as a math teacher at a school for Brazilians. Acquiring fluency in Japanese, I also worked in sales, translation, and Japanese and English privet lessons.
 
