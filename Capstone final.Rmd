@@ -1,0 +1,438 @@
+---
+title: "Google Data Analytics Capstone"
+subtitle: "Case study: Cyclistic bike-share company analysis"
+author: "Marcelo Hirata"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    theme: cerulean
+    toc: yes
+    toc_deph: 3
+    toc_float: yes
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+</br></br>
+
+# 1 Introduction </br>
+
+
+
+### 1.1 About the company Cyclistic bike-share
+
+|           In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. 
+  The bikes can be unlocked from one station and returned to any other station in the system anytime.
+| 
+|           Cyclistic sets itself apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with disabilities and riders who can't use a standard two-wheeled bike. 
+  The majority of riders opt for traditional bikes; about 8% of riders use assistive options. 
+  Cyclistic users are more likely to ride for leisure, but about 30% use them to commute to work each day.
+| 
+|           Until now, Cyclistic's marketing strategy relied on building general awareness and appealing to broad consumer segments with 3 pricing plans: single-ride passes, full-day passes, and annual memberships. 
+  Customers who purchase single-ride or full-day passes are referred to as **casual** riders. 
+  Customers who purchase annual memberships are Cyclistic **members**.
+| 
+| 
+### 1.2 Scenario
+| 
+|           You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights, your team will design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives must approve your recommendations, so they must be backed up with compelling data insights and professional data visualizations.
+
+
+| 
+| 
+### 1.3 Stakeholders
+| 
+-   **Lily Moreno**: The director of marketing and your manager. Moreno is responsible for the development of campaigns and initiatives to promote the bike-share program.
+-  **Cyclistic marketing analytics team**: A team of data analysts who are responsible for collecting, analyzing, and reporting data that helps guide Cyclistic marketing strategy. You joined this team six months ago and have been busy learning about Cyclistic’s mission and business goals — as well as how you, as a junior data analyst, can help Cyclistic achieve them.
+-   **Cyclistic executive team**: The notoriously detail-oriented executive team will decide whether to approve the recommended marketing program.
+| 
+| 
+
+### 1.3 Business task
+
+
+|           Three questions will guide the future marketing program:
+1. How do annual members and casual riders use Cyclistic bikes differently?
+2. Why would casual riders buy Cyclistic annual memberships?
+3. How can Cyclistic use digital media to influence casual riders to become members?
+
+|           In this analysis, the first question will be addressed: How do annual **members** and **casual** riders use Cyclistic bikes differently?
+|            
+
+</br>
+
+# 2 Data preparation and process </br>
+
+### 2.1 Data sources
+| 
+|           The data used in this analysis comprehends the last 12 months of Cyclistic's historical trip data (from 2021/06 to 2022/05), stored in monthly CSV files with structured wide datasets. 
+  [*Data source*](https://divvy-tripdata.s3.amazonaws.com/index.html)
+|           This is a public dataset that can be used to explore how different customer types are using Cyclistic bikes. 
+  [*Data license*](https://ride.divvybikes.com/data-license-agreement)
+| 
+##### Prepare the environment and Import the data to R
+
+```{r load packages, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse) # data manipulation
+library(janitor) # data cleaning
+library(skimr) # summary statistics
+library(lubridate) # work with date-times and time-spans
+library(ggplot2) # visualize data
+library(leaflet) # interactive maps
+library(hydroTSM) # time series used in hydrology
+library(geosphere) # geographic applications
+library(scales) # graphical scales
+library(stringr) # string operations
+```
+
+```{r Import the datasets, echo=TRUE, message=FALSE, warning=FALSE}
+trip_2106 <- read_csv("202106-divvy-tripdata.csv")
+trip_2107 <- read_csv("202107-divvy-tripdata.csv")
+trip_2108 <- read_csv("202108-divvy-tripdata.csv")
+trip_2109 <- read_csv("202109-divvy-tripdata.csv")
+trip_2110 <- read_csv("202110-divvy-tripdata.csv")
+trip_2111 <- read_csv("202111-divvy-tripdata.csv")
+trip_2112 <- read_csv("202112-divvy-tripdata.csv")
+trip_2201 <- read_csv("202201-divvy-tripdata.csv")
+trip_2202 <- read_csv("202202-divvy-tripdata.csv")
+trip_2203 <- read_csv("202203-divvy-tripdata.csv")
+trip_2204 <- read_csv("202204-divvy-tripdata.csv")
+trip_2205 <- read_csv("202205-divvy-tripdata.csv")
+```
+| 
+| 
+##### Check whether the set of data.frames are row-bindable and unite them
+
+```{r Return error, echo=TRUE, message=FALSE, warning=FALSE}
+if(compare_df_cols_same(trip_2106, trip_2107, trip_2108, trip_2109, trip_2110, trip_2111, trip_2112, trip_2201, trip_2202, trip_2203, trip_2204, trip_2205))
+  {
+  all_trips <- rbind(trip_2106, trip_2107, trip_2108, trip_2109, trip_2110, trip_2111, trip_2112, trip_2201, trip_2202, trip_2203, trip_2204, trip_2205)
+  } else {
+    print("Check the variables")
+  }
+```
+| 
+| 
+### 2.2 Data description and Cleansing
+| 
+| 
+##### Getting familiar with the dataset
+| 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+skim_without_charts(all_trips)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+head(all_trips)
+```
+
+</br>
+
+|           The data set has a record for each trip made by the users in the period mentioned. In total, there are 5,860,776 observations (trip records) and 13 variables (characteristics).Because of its size, I'll be using the R programming language to conduct the analysis.
+
+|           One of the dataset limitations is the absence of the user’s data. It'd be very useful to know at least their quantity or some demographic data, but as it hasn't been provided, this analysis will focus only on the trip’s characteristics.
+
+| 
+
+</br>
+
+-   Variables description and evaluation:
+    -   **ride_id** -- Each trip unique ID containing 16 characters. In this variable, there are no missing values 
+    -   **rideable_type** -- The types of bicycles. It has 3 unique and no missing values.
+    -   **start_at** and **ended_at** -- The date and time in which the rides start and end. They are in date-time format and there are no missing values.
+    -   **start_station_name**, **start_station_id**, **end_station_name** and **end_station_id** -- The names of the variables explain themselves. There are more than 800,000 missing values and more than 1000 unique values, which is not consistent with the number of available stations (692). These variables are not reliable and can't be used in the analysis.
+    -   **start_lat**, **start_lng**, **end_lat** and **end_lng** -- The coordinates(latitude and longitude) of the rides start and end location. There are only 5036 missing values at the trip ending coordinates, so it won't affect the analysis.
+    
+| 
+##### Exclude the variables that won't be used in this analysis.
+
+```{r select only the useful variables, echo=TRUE, message=FALSE, warning=FALSE}
+all_trips <- select(all_trips, 'ride_id', "rideable_type", "started_at", "ended_at", "member_casual",
+                    "start_lat", "start_lng", "end_lat", "end_lng")
+```
+
+| 
+##### Create a variable with the trip duration in seconds, and verificate if there are negative values.
+
+```{r Create the column trip_dur, echo=TRUE, message=FALSE, warning=FALSE}
+all_trips <- mutate(all_trips, "trip_dur" = difftime(ended_at, started_at, units = "secs"))
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(all_trips$trip_dur < 0)
+```
+
+- There are only 139 trips with inconsistent start and end times, their exclusion won't affect the analysis.
+
+| 
+##### Exclude observations with negative trip duration values.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+all_trips <- subset(all_trips, trip_dur > 0)
+```
+| 
+##### Verify if the data is clean.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(all_trips$trip_dur < 0)
+```
+
+</br>
+
+### 2.3 Wrangle </br>
+
+|           Transform the data to make it more accessible, simplify the code and make it more readable.
+
+
+##### Rename columns for more meaningful names
+
+```{r Renaming columns, echo=TRUE, message=FALSE, warning=FALSE}
+all_trips <- all_trips %>% 
+rename(trip_id = ride_id, bike_type = rideable_type)
+```
+
+
+##### Create variables for year season, months, day_of_week, time of day, and trip distance
+
+```{r crate columns year_season, echo=TRUE, message=FALSE, warning=FALSE}
+hr <- hour(all_trips$started_at)
+all_trips <- mutate(all_trips, "year_season" = time2season(all_trips$started_at, out.fmt = "seasons", type="default"),
+                    "month" = month(started_at, label = TRUE, abbr = TRUE),
+                    "day_of_week" = weekdays(started_at, abbreviate = TRUE),
+                    "day_time" = case_when(hr > 6 & hr < 12 ~ "morning",
+                                           hr >= 12 & hr < 16 ~ "afternoon",
+                                           hr >= 16 & hr < 20 ~ "evening",
+                                           TRUE ~ "night")
+                    )
+
+```
+
+
+
+```{r correct function miss spelling, echo=TRUE, message=FALSE, warning=FALSE}
+all_trips$year_season <- str_replace(all_trips$year_season, "autumm", "autumn")
+```
+
+
+```{r create column trip_dist, echo=TRUE, message=FALSE, warning=FALSE}
+all_trips <- all_trips %>% rowwise %>%
+  mutate("trip_dist" = distm(x = c(start_lng, start_lat), y = c(end_lng, end_lat), fun = distGeo))
+```
+
+
+
+```{r check created variable, echo=TRUE, message=FALSE, warning=FALSE}
+summary(all_trips$trip_dist)
+```
+
+</br>
+
+# 3 Analysis </br>
+
+|           Let's organize and visualize the data to categorize, discover connections, find patterns, and identify themes.
+
+
+
+##### Number of trips by user types -  "members" and "casuals"
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+plot_col <- c("#1d5a98", "#f0c660")
+legend_title <- "User type"
+ggplot(all_trips, mapping = aes(x = member_casual , fill = member_casual), labels = label_percent())+
+  geom_bar()+
+  geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = 1.5, colour = "white")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  labs(title = "TRIPS BY MEMBERS x CASUALS",
+       x = NULL,
+       y = "Trip count")+
+  scale_y_continuous(labels = comma)
+```
+
+-   In one year, there are more trips made by members.
+
+
+
+### 3.1 Difference between "WHEN" casual and members riders use Cyclist</br>
+
+
+
+##### Number of trips by members and casuals in each season of the year
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data = all_trips, mapping = aes(x = year_season, fill = member_casual))+
+    geom_bar(position = "dodge")+
+    geom_text(aes(label = scales::percent(..count../sum(..count..))), stat = "count", vjust = 1.4, hjust = 0.8, colour = "white", position = position_dodge(width = 0.9), angle = 45)+
+    labs(title = "TRIPS BY SEASON",
+         X = NULL,
+         y = "Trip count")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_x_discrete(limits = c("winter", "spring", "summer", "autumn"))
+```
+
+-   The trip rates are expected to variate, but we can observe that the casual trips variate more than the members. This can indicate that casual riders don't necessarily need to use Cyclist bikes. They may have alternative transport or are riding just for leisure.
+
+
+##### Number of trips by members and casuals in each month
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data = all_trips, mapping = aes(x = month, fill = member_casual))+
+    geom_bar(position = "dodge")+
+    geom_text(aes(label = scales::percent(..count../sum(..count..))), stat = "count", vjust = 0.4, hjust = 1, colour = "white", position = position_dodge(width = 0.9), angle = 90)+
+    labs(title = "TRIPS BY MONTHS",
+         X = NULL,
+         y = "Trip count")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_y_continuous(labels = comma)
+```
+
+-   Here we can see that, in the individual months, there isn't a big difference from the season trend with the casual trips topping by +- 1% in July and August.
+
+
+
+
+##### Number of trips by members and casuals on each day of the week in different seasons
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data = all_trips, mapping = aes(x = day_of_week, fill = member_casual))+
+  geom_bar(position = "dodge")+
+  labs(title = "TRIPS BY DAYS OF THE WEEK IN EACH SEASON OF THE YEAR",
+       X = NULL,
+       y = "Trip count",)+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_x_discrete(limits = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))+
+  scale_y_continuous(labels = comma)+
+  facet_wrap(~year_season)
+```
+
+-  Looking at the data grouped by the days of the week, we can see that the casual clients' trips surpass the members at the weekends not only in the summer but also in the autumn and spring Saturdays. This confirms that casual clients use Cyclistic in their leisure time and members use it for everyday routine.
+
+
+
+
+##### Number of trips by members and casuals by the time of the day
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data = all_trips, mapping = aes(x = day_time, fill = member_casual))+
+  geom_bar(position = "dodge")+
+  geom_text(aes(label = scales::percent(..count../sum(..count..))), stat = "count", vjust = 0, hjust = 1.1, colour = "white",
+            angle = 90 , position = position_dodge(width = 1))+
+  labs(title = "TRIPS BY TIME OF THE DAY",
+       X = NULL,
+       y = "Trip count")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_x_discrete(limits = c("morning","afternoon","evening", "night"))+
+  scale_y_continuous(labels = comma)
+```
+
+- While the trips made by casuals variate 3% during each time of the day, the trips made by members don't variate much between the morning and afternoon,  but increase greatly in the evening and decrease at night matching the commute rush hours.
+| 
+
+##### Number of trips by members and casuals by the time of the day in each day of the week
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data = all_trips, mapping = aes(x = day_time, fill = member_casual))+
+  geom_bar(position = "dodge")+
+  labs(title = "TRIPS BY TIME OF THE DAY IN EACH DAY OF THE WEEK",
+       X = NULL,
+       y = "Trip count")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_x_discrete(limits = c("morning","afternoon","evening", "night"))+
+  scale_y_continuous(labels = comma)+
+  facet_wrap(~day_of_week)+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.8, hjust=0.6))
+```
+
+- Looking at each day of the week, we can establish an important difference. At weekends, besides the trips made by casuals increase, the majority of trips start in the afternoon, uncovering another characteristic of casual users.
+
+
+</br>
+
+### 3.1 Difference between "HOW" casuals and members riders use Cyclist</br>
+
+
+##### Duration of trips by members and casuals
+
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+all_trips %>% 
+  group_by(year_season, member_casual) %>% summarise(duration_mean = mean(trip_dur), .groups = 'drop') %>% 
+ggplot(mapping = aes(x = member_casual, y = duration_mean, fill = member_casual))+
+  geom_col()+
+    labs(title = "TRIPS DURATON IN EACH SEASON",
+        X = NULL,
+        y = "Duration (sec) mean")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_y_continuous(labels = comma)+
+  facet_wrap(~year_season)
+```
+- The trips made by casuals take more time than the members' trips all year round
+
+
+
+##### Distance of trips by members and casuals
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+all_trips %>% 
+  group_by(year_season, member_casual) %>% summarise(distance_mean = mean(trip_dist[!is.nan(trip_dist)]), .groups = 'drop') %>% 
+ggplot(mapping = aes(x = member_casual, y = distance_mean, fill = member_casual))+
+  geom_col()+
+  labs(title = "TRIPS DISTANCE IN EACH SEASON",
+        X = NULL,
+        y = "Distance (m) mean")+
+  scale_fill_manual(legend_title, values = plot_col)+
+  scale_y_continuous(labels = comma)+
+  facet_wrap(~year_season)
+  
+```
+
+
+- When comparing the trips by time duration and distance, we realize that the trips made by casuals are longer and take more time, but the distance increase rate is not so big as the duration increase rate. Therefore, casual rides are a little longer, but much more time. Another confirmation is that the casuals use Cyclistc for leisure.
+
+
+
+
+##### Bikes types by members and casuals
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(all_trips, mapping = aes(x = bike_type, fill = member_casual), labels = label_percent())+
+  geom_bar(position = "dodge")+
+  geom_text(aes(label = scales::percent(..count../sum(..count..))), stat = "count", vjust = 0, hjust = 1.1, colour = "white",
+            angle = 90 , position = position_dodge(width = 1))+
+  scale_fill_manual(legend_title, values = plot_col)+
+  labs(title = "BIKES TYPES BY MEMBERS x CASUALS",
+       x = NULL,
+       y = "Trip count")+
+  scale_y_continuous(labels = comma)
+```
+- There is no relevant trend for this analysis. 
+
+
+</br>
+
+# 4 Last considerations </br>
+
+
+
+### 4.1 Differences
+- Most of the Casuals users use Cyclistic for leisure and the members for everyday routine, most likely to commute. That is the reason for the following differences:
+  - Members’ trips number don’t variate so much as the number of casuals in each season of the year.
+  - Casuals ride more at weekends and members on weekdays.
+  - Casual trips mostly start in the afternoon and members’ trips in the evening.
+  - Casual trips are longer in distance and time.
+
+### 4.2 Recommendations
+
+- Due to the casual’s seasonality, it may be interesting for Cyclistic to create segmented memberships just for warmer days, weekends, or afternoons.
+
+- As the casuals use Cyclistic mainly in their free time, the marketing campaigns targeting them should include themes like "Chicago sightseeing", "family bicycle riding", and "bicycle riding dates".
+
+| 
+| 
+| 
+| 
